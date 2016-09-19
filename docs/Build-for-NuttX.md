@@ -172,7 +172,7 @@ As noted in [Build for Linux](Build-for-Linux.md) page, you need to give additio
 --target-os=nuttx 
 --nuttx-home=(full path of nuttx home where .config file exist)
 --buildlib
---no-checktest
+--no-check-test
 ```
 Have to disable 'checktest' as test with Nuttx binaries are not possible.
 `buildlib` for nuttx is turned on for default.
@@ -199,7 +199,7 @@ If you have harmony in /home/maxwell/harmony, for example;
 ```
 cd harmony/iotjs
 ./tools/build.py --buildtype=release --target-arch=arm --target-os=nuttx \
---nuttx-home=/home/maxwell/harmony/nuttx/nuttx --no-checktest
+--nuttx-home=/home/maxwell/harmony/nuttx/nuttx --no-check-test
 ```
 
 ### 4. Copy libraries to nuttx/nuttx/lib folder
@@ -284,7 +284,3 @@ If you see
 ```
 and it stays on the screen, something is wrong. Blue LED may blink if NuttX is in abnormal state. Press black(reset) button on the board and try again. If you still see this warning message, begin with original NuttX code and check your board, USB line and other softwares.
 
-
-### 6. Latest status
-
-Current IoT.js, as of June 2015, requires more memory than STM32F4-disco provides. We need memory optimisation and this work is in progress.

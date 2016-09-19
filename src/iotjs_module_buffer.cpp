@@ -82,6 +82,17 @@ size_t BufferWrap::length() {
 }
 
 
+static size_t BoundRange(int index, size_t low, size_t upper) {
+  if (index < static_cast<int>(low)) {
+    return low;
+  }
+  if (index > static_cast<int>(upper)) {
+    return upper;
+  }
+  return index;
+}
+
+
 int BufferWrap::Compare(const BufferWrap& other) const {
   size_t i = 0;
   size_t j = 0;
@@ -133,8 +144,7 @@ JObject CreateBuffer(size_t len) {
 
   JArgList jargs(1);
   jargs.Add(JVal::Number((int)len));
-
-  JResult jres(jBuffer.Call(JObject::Null(), jargs));
+  JResult jres(jBuffer.Call(JObject::Undefined(), jargs));
   IOTJS_ASSERT(jres.IsOk());
   IOTJS_ASSERT(jres.value().IsObject());
 
@@ -158,8 +168,6 @@ JHANDLER_FUNCTION(Buffer) {
   BufferWrap* buffer_wrap = new BufferWrap(*jbuiltin, length);
   IOTJS_ASSERT(buffer_wrap == (BufferWrap*)(jbuiltin->GetNative()));
   IOTJS_ASSERT(length == 0 || buffer_wrap->buffer() != NULL);
-
-  return true;
 }
 
 
@@ -175,8 +183,6 @@ JHANDLER_FUNCTION(Compare) {
   BufferWrap* dst_buffer_wrap = BufferWrap::FromJBuffer(*jdst_buffer);
 
   handler.Return(JVal::Number(src_buffer_wrap->Compare(*dst_buffer_wrap)));
-
-  return true;
 }
 
 
@@ -198,14 +204,20 @@ JHANDLER_FUNCTION(Copy) {
   int src_start = handler.GetArg(2)->GetInt32();
   int src_end = handler.GetArg(3)->GetInt32();
 
+  dst_start = BoundRange(dst_start, 0, dst_buffer_wrap->length());
+  src_start = BoundRange(src_start, 0, src_buffer_wrap->length());
+  src_end = BoundRange(src_end, 0, src_buffer_wrap->length());
+
+  if (src_end < src_start) {
+    src_end = src_start;
+  }
+
   int copied = dst_buffer_wrap->Copy(src_buffer_wrap->buffer(),
                                      src_start,
                                      src_end,
                                      dst_start);
 
   handler.Return(JVal::Number(copied));
-
-  return true;
 }
 
 
@@ -223,11 +235,13 @@ JHANDLER_FUNCTION(Write) {
 
   BufferWrap* buffer_wrap = BufferWrap::FromJBufferBuiltin(*jbuiltin);
 
+  offset = BoundRange(offset, 0, buffer_wrap->length());
+  length = BoundRange(length, 0, buffer_wrap->length() - offset);
+  length = BoundRange(length, 0, src.size());
+
   size_t copied = buffer_wrap->Copy(src.data(), 0, length, offset);
 
   handler.Return(JVal::Number((int)copied));
-
-  return true;
 }
 
 
@@ -241,16 +255,29 @@ JHANDLER_FUNCTION(Slice) {
 
   int start = handler.GetArg(0)->GetInt32();
   int end = handler.GetArg(1)->GetInt32();
+
+  if (start < 0) {
+    start += buffer_wrap->length();
+  }
+  start = BoundRange(start, 0, buffer_wrap->length());
+
+  if (end < 0) {
+    end += buffer_wrap->length();
+  }
+  end = BoundRange(end, 0, buffer_wrap->length());
+
+  if (end < start) {
+    end = start;
+  }
+
   int length = end - start;
-  JHANDLER_CHECK(length >= 0);
+  IOTJS_ASSERT(length >= 0);
 
   JObject jnew_buffer = CreateBuffer(length);
   BufferWrap* new_buffer_wrap = BufferWrap::FromJBuffer(jnew_buffer);
   new_buffer_wrap->Copy(buffer_wrap->buffer(), start, end, 0);
 
   handler.Return(jnew_buffer);
-
-  return true;
 }
 
 
@@ -265,8 +292,16 @@ JHANDLER_FUNCTION(ToString) {
 
   int start = handler.GetArg(0)->GetInt32();
   int end = handler.GetArg(1)->GetInt32();
+
+  start = BoundRange(start, 0, buffer_wrap->length());
+  end = BoundRange(end, 0, buffer_wrap->length());
+
+  if (end < start) {
+    end = start;
+  }
+
   int length = end - start;
-  JHANDLER_CHECK(length >= 0);
+  IOTJS_ASSERT(length >= 0);
 
   length = strnlen(buffer_wrap->buffer() + start, length);
 
@@ -274,8 +309,6 @@ JHANDLER_FUNCTION(ToString) {
 
   JObject ret(str);
   handler.Return(ret);
-
-  return true;
 }
 
 

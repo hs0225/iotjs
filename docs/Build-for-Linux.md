@@ -1,7 +1,8 @@
 ### Overall steps to build for Linux
 1. Get the sources
-2. Set build options
-3. Build all at once
+2. Build all at once
+3. Execute IoT.js
+4. Clean build directory
 
 ***
 
@@ -47,41 +48,7 @@ cd iotjs
 Sub modules(_http-parser_, _JerryScript_, _libuv_ and _libtuv_) will be pulled. And matching hash will be checked out for your current IoT.js version when you run the build script.
 
 
-### 2. Set build options
-
-Some basic options are provided.
-
-Existing build options are listed as follows;
-```
-buildtype=debug|release (debug is default)
-builddir=build (build is default)
-buildlib (default is False)
-target-arch=x86_64|i686|arm (depends on your host platform)
-target-os=linux|nuttx (linux is default)
-make-flags=-j (options to send to make)
-nuttx-home= (no default value)
-init-submodule (default is True)
-tidy (default is True)
-jerry-memstats (default is False)
-checktest (default is True)
-jerry-heaplimit (default is 81, may change)
-tuv (default is False)
-```
-
-To give options, please use two dashes '--' before the option name as described in following sections.
-
-Options that may need explanations.
-* builddir: compile intermediate and output files are generated here. 
-* buildlib: generating _iotjs_ to a library if True(e.g. for NuttX). give __--buildlib__ to make it True.
-* nuttx-home: it's NuttX platform specific, to tell where the NuttX configuration and header files are.
-* init-submodule: for normal cases you can ignore this, it will checkout matching revision of each sub-module library every time. but if you want to change something or checkout other revision, use __--noinit-submodule__.
-* tidy: checks codes are tidy. we recommend to use this option. use __--notidy__ if you want to turn it off.
-* jerry-memstats: turn on the flag so that jerry dumps byte codes and literals and memory usage while parsing and execution.
-* checktest: after build makes it run all tests in test folder
-* jerry-heaplimit: JerryScript default heap size (as of today) is 256Kbytes. This option is to change the size for embedded systems, nuttx for now, and current default is 81KB. For linux, this has no effect. While building nuttx if you see an error `region sram overflowed by xxxx bytes`, you may have to decrease about that amount.
-* tuv: Use `libtuv` instead of `libuv`. When we think tuv is ready, this will be default option.
-
-### 3. Build all at once
+### 2. Build all at once
 
 IoT.js and required sub-modules are generated all at once in tools folder with build.py.
 
@@ -89,6 +56,54 @@ IoT.js and required sub-modules are generated all at once in tools folder with b
 cd iotjs
 ./tools/build.py
 ```
+
+
+#### Set build options
+Some basic options are provided.
+
+Existing build options are listed as follows;
+```
+buildtype=debug|release (debug is default)
+builddir=build (build is default)
+clean
+buildlib (default is False)
+target-arch=x86|x86_64|x64|i686|arm (depends on your host platform)
+target-os=linux|nuttx|darwin|osx (linux is default)
+target-board
+cmake-param
+compile-flag
+link_flag
+external-include-dir
+external-static-lib
+external-shared-lib
+jerry-cmake-param
+jerry-compile-flag
+jerry-link-flag
+jerry-lto
+jerry-heap-section
+jerry-heaplimit (default is 81, may change)
+jerry-memstat (default is False)
+no-init-submodule (default is init)
+no-check-tidy (default is check)
+no-check-test (default is check)
+no-parallel-build
+no-snapshot
+nuttx-home= (no default value)
+```
+
+To give options, please use two dashes '--' before the option name as described in following sections.
+
+Options that may need explanations.
+* builddir: compile intermediate and output files are generated here.
+* buildlib: generating _iotjs_ to a library if True(e.g. for NuttX). give __--buildlib__ to make it True.
+* jerry-heaplimit: JerryScript default heap size (as of today) is 256Kbytes. This option is to change the size for embedded systems, nuttx for now, and current default is 81KB. For linux, this has no effect. While building nuttx if you see an error `region sram overflowed by xxxx bytes`, you may have to decrease about that amount.
+* jerry-memstat: turn on the flag so that jerry dumps byte codes and literals and memory usage while parsing and execution.
+* no-check-tidy: no checks codes are tidy. we recommend to check tidy.
+* no-check-test: do not run all tests in test folder after build.
+* nuttx-home: it's NuttX platform specific, to tell where the NuttX configuration and header files are.
+
+If you want to more detail about options, please check [Build Script](https://github.com/Samsung/iotjs/wiki/Build%20Script).
+
 
 #### Options example
 
@@ -106,13 +121,9 @@ If you want to build 32bit version in x86_64 and debug version only produce a li
 
 To build release version and with different jerry revision. assume you have already checked it out.
 ```
-./tools/build.py --buildtype=release --noinit-submodule
+./tools/build.py --buildtype=release --no-init-submodule
 ```
 
-To build with tuv,
-```
-./tools/build.py --tuv
-```
 
 
 #### Build only IoT.js with given build option
@@ -123,15 +134,6 @@ cd build/x86_64-linux/release/iotjs
 make
 ```
 
-#### How to execute?
-
-Executable name is **'iotjs'** and resides in (target-arch)-(target-os)/(buildtype)/iotjs. 
-To run greetings JavaScript in test folder, for example;
-
-```
-./build/x86_64-linux/debug/iotjs/iotjs ./test/run_pass/test_console.js
-```
-
 #### What build script does
 
 1. It will clone sub-modules, this will be done only once when version hash has not changed.
@@ -140,7 +142,45 @@ To run greetings JavaScript in test folder, for example;
 4. Build IoT.js
 
 
-#### How to clean
+### 3. Execute IoT.js
+
+Executable name is **'iotjs'** and resides in (target-arch)-(target-os)/(buildtype)/iotjs. 
+To run greetings JavaScript in test folder, for example;
+
+```
+./build/x86_64-linux/debug/iotjs/iotjs ./test/run_pass/test_console.js
+```
+
+#### Set execution Options
+
+Some execution options are provided as follows;
+```
+memstat
+show-opcodes
+```
+
+To give options, please use two dashes '--' before the option name as described in following sections.
+
+For more details on options, please see below.
+* memstat: dump memory statistics. To get this, must build with __jerry-memstat__ option.
+* show-opcodes: print compiled byte-code.
+
+
+#### Options example
+
+To print memory statistics, follow the below steps;
+```
+./tools/build.py --jerry-memstat
+
+./build/x86_64-linux/debug/iotjs/iotjs ./test/run_pass/test_console.js --memstat
+```
+
+With given `show-opcodes` option, opcodes will be shown.
+```
+./build/x86_64-linux/debug/iotjs/iotjs ./test/run_pass/test_console.js --show-opcodes
+```
+
+### 4. Clean build directory
 
 Just remove the folder as follows;
 ```
