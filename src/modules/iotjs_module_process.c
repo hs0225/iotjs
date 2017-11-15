@@ -194,25 +194,6 @@ JS_FUNCTION(DoExit) {
 }
 
 
-#if defined(__linux__)
-JS_FUNCTION(RunCmd) {
-  DJS_CHECK_ARGS(1, string);
-
-  iotjs_string_t path = JS_GET_ARG(0, string);
-  printf("%s\n", iotjs_string_data(&path));
-  int err = system(iotjs_string_data(&path));
-
-  if (err) {
-    iotjs_string_destroy(&path);
-    return JS_CREATE_ERROR(COMMON, "runcmd error");
-  }
-
-  iotjs_string_destroy(&path);
-  return jerry_create_undefined();
-}
-#endif
-
-
 void SetNativeSources(iotjs_jval_t native_sources) {
   for (int i = 0; js_modules[i].name; i++) {
     iotjs_jval_set_property_jval(native_sources, js_modules[i].name,
@@ -310,9 +291,6 @@ iotjs_jval_t InitProcess() {
   iotjs_jval_set_method(process, IOTJS_MAGIC_STRING_DEBUGGER_SOURCE_COMPILE,
                         DebuggerSourceCompile);
   iotjs_jval_set_method(process, IOTJS_MAGIC_STRING_DOEXIT, DoExit);
-#if defined(__linux__) // temporary api for smart things demo
-  iotjs_jval_set_method(process, IOTJS_MAGIC_STRING_RUNCMD, RunCmd);
-#endif
   SetProcessEnv(process);
 
   // process.builtin_modules
