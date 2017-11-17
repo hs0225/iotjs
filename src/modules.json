@@ -339,6 +339,10 @@
     "util": {
       "js_file": "js/util.js"
     },
+    "smartthings_response": {
+      "native_files": ["modules/smart_things/iotjs_module_smartthings_response.c"],
+      "init": "InitSmartThingsResponse",
+    },
     "smartthings": {
       "platforms": {
         "linux": {
@@ -351,6 +355,7 @@
       "native_files": ["modules/smart_things/iotjs_module_smartthings.c"],
       "js_file": "modules/smart_things/smartthings.js",
       "init": "InitSmartThings",
+      "require": ["smartthings_response"]
     },
   }
 }

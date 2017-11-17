@@ -1,10 +1,11 @@
 #include <tinyara/gpio.h>
-
-#include "iotjs_def.h"
 #include <iotbus_gpio.h>
 #include <st_things.h>
 
-#define TAG		"LIGHT_THINGS"
+#include "iotjs_def.h"
+#include "modules/smart_things/iotjs_module_smartthings.h"
+
+#define TAG		"SMART_THINGS"
 
 #ifdef CONFIG_RESET_BUTTON
 extern void iotapi_initialize(void);
@@ -44,19 +45,63 @@ static bool handle_ownership_transfer_request(void)
 	return true;
 }
 
+
 static bool handle_get_request(st_things_get_request_message_s *req_msg, st_things_representation_s *resp_rep)
 {
 	printf("Received a GET request on %s\n", req_msg->resource_uri);
 
-	return false;
+	iotjs_stings_t* stings_data = get_stings_data();
+	iotjs_jval_t jget_request = iotjs_jval_get_property(stings_data->jstings, "emitGetRequest");
+
+	iotjs_jval_t jnative_cont = iotjs_jval_create_object();
+	iotjs_stings_rep_native_create(jnative_cont, resp_rep);
+
+	iotjs_jargs_t jargv = iotjs_jargs_create(4);
+	iotjs_jargs_append_string_raw(&jargv, req_msg->resource_uri ? req_msg->resource_uri : "");
+	iotjs_jargs_append_string_raw(&jargv, req_msg->property_key ? req_msg->property_key : "");
+	iotjs_jargs_append_string_raw(&jargv, req_msg->query ? req_msg->query : "");
+	iotjs_jargs_append_jval(&jargv, jnative_cont);
+
+  iotjs_jhelper_call_ok(jget_request, stings_data->jstings, &jargv);
+
+  iotjs_jargs_destroy(&jargv);
+  jerry_release_value(jget_request);
+
+	return true;
 }
 
 static bool handle_set_request(st_things_set_request_message_s *req_msg, st_things_representation_s *resp_rep)
 {
 	printf("Received a SET request on %s\n", req_msg->resource_uri);
 
-	return false;
+  iotjs_stings_t* stings_data = get_stings_data();
+  iotjs_jval_t jset_request = iotjs_jval_get_property(stings_data->jstings, "emitSetRequest");
+
+
+  iotjs_jval_t jnative_cont1 = iotjs_jval_create_object();
+  iotjs_stings_rep_native_create(jnative_cont1, req_msg->rep);
+
+  iotjs_jval_t jnative_cont2 = iotjs_jval_create_object();
+  iotjs_stings_rep_native_create(jnative_cont2, resp_rep);
+
+  iotjs_jargs_t jargv = iotjs_jargs_create(4);
+
+  iotjs_jargs_append_string_raw(&jargv, req_msg->resource_uri ? req_msg->resource_uri : "");
+  iotjs_jargs_append_string_raw(&jargv, req_msg->query ? req_msg->query : "");
+  iotjs_jargs_append_jval(&jargv, jnative_cont1);
+  iotjs_jargs_append_jval(&jargv, jnative_cont2);
+
+  iotjs_jhelper_call_ok(jset_request, stings_data->jstings, &jargv);
+  iotjs_jargs_destroy(&jargv);
+  jerry_release_value(jset_request);
+
+	return true;
 }
+
+void iotjs_smarttings_notify_observers(const char* res) {
+  st_things_notify_observers(res);
+}
+
 
 int init_smart_things() {
   #ifdef CONFIG_RESET_BUTTON
