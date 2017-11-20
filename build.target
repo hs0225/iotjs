@@ -67,7 +67,7 @@
   },
   "shared_libs": {
     "os": {
-      "linux": ["m", "rt"],
+      "linux": ["m", "rt", "curl"],
       "darwin": [],
       "nuttx": [],
       "tizen": ["m", "rt", "curl"],
