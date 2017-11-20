@@ -1,0 +1,17 @@
+{
+  "name": "demo",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "oauth": "^0.9.15",
+    "sentiment": "^4.1.0",
+    "url": "^0.11.0"
+  },
+  "devDependencies": {},
+  "description": ""
+}
