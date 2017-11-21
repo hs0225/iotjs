@@ -4,6 +4,7 @@ var sentiment = require('sentiment');
 var url = require('url');
 
 var config = require('./config');
+var led = require('./i2c_led');
 var utils = require('./utils');
 
 // curl: ./tools/apt-get-install-deps.sh
@@ -70,6 +71,16 @@ oauth2.getOAuthAccessToken('', {
     }
 });
 
+function showFace(score) {
+  if(score > 0) {
+    led.setDisplay('smile');
+  } else if(score < 0) {
+    led.setDisplay('sad');
+  } else {
+    led.setDisplay('soso');
+  }
+}
+
 function playMusic(score) {
   var tmp;
 
@@ -93,6 +104,8 @@ function playMusic(score) {
 
 function handleUpdatedTweet(tweet) {
   var data = createData(tweet);
+
+  showFace(data.emotion.score);
 
   playMusic(data.emotion.score);
 
