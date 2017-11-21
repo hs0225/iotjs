@@ -6,6 +6,8 @@
 #include "modules/smart_things/iotjs_module_smartthings.h"
 
 #define TAG		"SMART_THINGS"
+#define CONFIG_RESET_BUTTON 1
+#define CONFIG_RESET_BUTTON_PIN_NUMBER 44
 
 #ifdef CONFIG_RESET_BUTTON
 extern void iotapi_initialize(void);
@@ -62,7 +64,8 @@ static bool handle_get_request(st_things_get_request_message_s *req_msg, st_thin
 	iotjs_jargs_append_string_raw(&jargv, req_msg->query ? req_msg->query : "");
 	iotjs_jargs_append_jval(&jargv, jnative_cont);
 
-  iotjs_jhelper_call_ok(jget_request, stings_data->jstings, &jargv);
+  bool throw;
+  iotjs_jhelper_call(jget_request, stings_data->jstings, &jargv, &throw);
 
   iotjs_jargs_destroy(&jargv);
   jerry_release_value(jget_request);
@@ -91,7 +94,8 @@ static bool handle_set_request(st_things_set_request_message_s *req_msg, st_thin
   iotjs_jargs_append_jval(&jargv, jnative_cont1);
   iotjs_jargs_append_jval(&jargv, jnative_cont2);
 
-  iotjs_jhelper_call_ok(jset_request, stings_data->jstings, &jargv);
+  bool throw;
+  iotjs_jhelper_call(jset_request, stings_data->jstings, &jargv, &throw);
   iotjs_jargs_destroy(&jargv);
   jerry_release_value(jset_request);
 

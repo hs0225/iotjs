@@ -81,7 +81,7 @@ static void req_set_data(const char* key, iotjs_jval_t jdata, void *resp_rep) {
 #endif
     iotjs_string_destroy(&jvalue_raw);
 
-  } else if(jerry_value_is_object(jdata)) {
+  } else if (jerry_value_is_object(jdata)) {
 #if defined(__TIZENRT__)
     st_things_representation_s *temp_rep = st_things_create_representation_inst();
 #else
@@ -112,6 +112,10 @@ static void req_set_data(const char* key, iotjs_jval_t jdata, void *resp_rep) {
 
     st_things_destroy_representation_inst(temp_rep);
 #endif
+  } else if (jerry_value_is_number(jdata)) {
+    double number_data = iotjs_jval_as_number(jdata);
+    printf("[IOTJS] setInt: %lf - %lld\n", number_data, (int64_t)number_data);
+    native_rep->set_int_value(native_rep, key, (int64_t)number_data);
   }
 }
 
@@ -137,6 +141,7 @@ JS_FUNCTION(Get) {
   return jerry_create_undefined();
 }
 
+
 JS_FUNCTION(GetString) {
   DJS_CHECK_THIS(object);
 
@@ -160,6 +165,29 @@ JS_FUNCTION(GetString) {
 }
 
 
+JS_FUNCTION(GetInt) {
+  DJS_CHECK_THIS(object);
+
+  JS_DECLARE_THIS_PTR(sthings_rep, st);
+  IOTJS_VALIDATED_STRUCT_METHOD(iotjs_sthings_rep_t, st);
+
+#if defined(__TIZENRT__)
+  iotjs_string_t jkey_string = JS_GET_ARG(0, string);
+  const char* jkey_stirng_raw = iotjs_string_data(&jkey_string);
+  int64_t data;
+
+  st_things_representation_s *resp_rep = get_native_rep_handler(_this->jnative_cont);
+  resp_rep->get_int_value(resp_rep, jkey_stirng_raw, &data);
+
+  iotjs_string_destroy(&jkey_string);
+  printf("[IOTJS] getInt: %lld - %lf\n", data, (double)data);
+  return iotjs_jval_create_number((double)data);
+
+#else
+  return jerry_create_undefined();
+#endif
+}
+
 iotjs_jval_t InitSmartThingsResponse() {
   iotjs_jval_t smart_things_response = jerry_create_external_function(SmartThingsResponse);
 
@@ -168,6 +196,7 @@ iotjs_jval_t InitSmartThingsResponse() {
   iotjs_jval_set_method(prototype, "set", Set);
   iotjs_jval_set_method(prototype, "get", Get);
   iotjs_jval_set_method(prototype, "getString", GetString);
+  iotjs_jval_set_method(prototype, "getInt", GetInt);
 
   jerry_release_value(prototype);
 

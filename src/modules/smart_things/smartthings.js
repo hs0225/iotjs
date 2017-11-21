@@ -4,18 +4,6 @@ var EventEmitter = require('events').EventEmitter;
 var SmartThingsNative = native;
 var SmartThingsResponse = require('smartthings_response');
 
-// function SmartThingsResponse() {
-//   this._data = {};
-// }
-
-// SmartThingsResponse.prototype.set = function(key, value) {
-//   this._data[key] = value;
-// };
-
-// SmartThingsResponse.prototype.get = function(key) {
-//   return this._data[key];
-// };
-
 
 function SmartThingsGetMessage(url, pKey, query) {
   this.resourceUri = url;
@@ -53,7 +41,7 @@ function SmartThingsSetMessage(url, query, _req) {
   this._queryRaw = query; // key1=value1?key2=value2?
   this.req = new SmartThingsResponse(_req);
   
-  console.log('smartThings', url);
+  console.log('[IOTJS] set message', query);
 }
 
 
