@@ -78,8 +78,9 @@ struct iotjs_i2c_platform_data_s {
 void i2c_create_platform_data(void* device, iotjs_i2c_t* i2c,
                               iotjs_i2c_platform_data_t** ppdata) {
   iotjs_i2c_platform_data_t* pdata = IOTJS_ALLOC(iotjs_i2c_platform_data_t);
-
-  pdata->device = *((iotjs_string_t*)device);
+  iotjs_string_t* device_stirng = (iotjs_string_t*)device;
+  pdata->device = iotjs_string_create_with_size(iotjs_string_data(device_stirng),
+    iotjs_string_size(device_stirng));
   pdata->device_fd = -1;
   *ppdata = pdata;
 }
