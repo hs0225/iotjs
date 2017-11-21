@@ -2,10 +2,10 @@ var fs = require('fs');
 
 if (process.platform === 'tizenrt') {
   var new_filepath = '/mnt/run_demo_new.js';
-  var filePath = '/rom/backend/backend.js';
+  var filePath = '/rom/backend.js';
 } else {
   var new_filepath = 'run_demo_new.js';
-  var filePath = 'app-livecoding.js';
+  var filePath = 'backend.js';
 }
 
 /*

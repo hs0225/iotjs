@@ -9,28 +9,17 @@ var device = require('./device');
 var utils = require('./utils');
 
 var count = 0;
-var gpio = new Gpio();
-
 var RED_PIN = 0,
-      GREEN_PIN = 1,
-      BLUE_PIN = 2;
+    GREEN_PIN = 1,
+    BLUE_PIN = 2;
 
 var LED_ON = true,
-      LED_OFF = false;
-
+    LED_OFF = false;
+    
 var ledPin = [31, 30, 32];
 var ledGpio = [];
 
-function createLedGpio() {
-  for (var i = 0; i < ledPin.length; i++) {
-    ledGpio[i] = gpio.open({
-      pin: ledPin[i],
-      direction: gpio.DIRECTION.OUT,
-    });
-  }
-}
-
-createLedGpio();
+var gpio = new Gpio();
 
 var server = http.createServer(function(req, res) {
   var data = '';
@@ -63,6 +52,10 @@ var server = http.createServer(function(req, res) {
   }
 }).listen(config.port);
 
+createLedGpio();
+
+console.log('START');
+
 function change_mood(score) {
   // TODO: change mood based on emotion score (-5 ~ 5)
   if (ledGpio.length < ledPin.length) {
@@ -85,9 +78,18 @@ function change_mood(score) {
   }
 }
 
+function createLedGpio() {
+  for (var i = 0; i < ledPin.length; i++) {
+    ledGpio[i] = gpio.open({
+      pin: ledPin[i],
+      direction: gpio.DIRECTION.OUT,
+    });
+  }
+}
+
 function close_application(data) {
   fs.writeFileSync(device.config.new_filepath, new Buffer(data));
   server.close();
   console.log('TERMINATED');
-  process.exit(0);
+  // process.exit(0);
 }
