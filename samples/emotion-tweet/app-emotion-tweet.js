@@ -4,8 +4,8 @@ var sentiment = require('sentiment');
 var url = require('url');
 
 var config = require('./config');
+var led = require('./i2c_led');
 var utils = require('./utils');
-var setDisplay = require('./i2c_led');
 
 // curl: ./tools/apt-get-install-deps.sh
 // x86: build ./tools/build.py --cmake-param=-DENABLE_MODULE_HTTPS=ON --jerry-heaplimit=512 --clean --no-check-test
@@ -73,11 +73,11 @@ oauth2.getOAuthAccessToken('', {
 
 function showFace(score) {
   if(score > 0) {
-    setDisplay('smile');
+    led('smile');
   } else if(score < 0) {
-    setDisplay('sad');
+    led('sad');
   } else {
-    setDisplay('soso');
+    led('soso');
   }
 }
 
