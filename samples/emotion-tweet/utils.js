@@ -1,5 +1,4 @@
 var http = require('http');
-var count = 0;
 
 // utils
 function status(res, data, code, req, isjson) {
@@ -23,19 +22,6 @@ function status(res, data, code, req, isjson) {
   return res.end(data);
 }
 
-function filter(req) {
-  var path, match;
-
-  if (req.method == 'OPTIONS') return [''];
-  console.log(count++, req.method, req.url);
-
-  // TODO: use querystring if memory is enough.
-  path = req.url.split('?');
-  //match = /(\/device)(\/*(.*)\/((\w+)\_(\w{1,2}))\?*(.*))*/g.exec(path[0]);// (/device)[(/....)/(XXX)_(dd)?(....)]
-  match && match.shift();
-  return match != null ? match : path;
-}
-
 function recvDelegator(req, doneCallback) {
   var body = '';
 
@@ -48,17 +34,21 @@ function recvDelegator(req, doneCallback) {
   });
 }
 
-function request(url) {
-  console.log(url);
-  // TODO: protocol parse
+function request(hostname, port, path) {
+  var options = {
+    hostname: hostname,
+    method : 'GET',
+    port : port,
+    path: path,
+  };
 
-  http.get(url, function (resp) {
+  http.get(options, function (resp) {
     var data = '';
-  
+
     resp.on('data', function (chunk) {
       data += chunk;
     });
-  
+
     resp.on('end', function () {
     });
 
@@ -124,10 +114,9 @@ Task.prototype.checkErrorList = function checkErrorList(errors) {
 
 
 module.exports = {
-  filter: filter,
   status: status,
   recvDelegator: recvDelegator,
-  Task: Task,
+  // Task: Task,
   request: request,
 };
 

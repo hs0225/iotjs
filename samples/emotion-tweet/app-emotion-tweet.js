@@ -1,11 +1,14 @@
 var https = require('https');
 var OAuth2 = require('oauth').OAuth2;
 var sentiment = require('sentiment');
+var url = require('url');
 
 var config = require('./config');
 var utils = require('./utils');
 
-// ./tools/build.py --cmake-param=-DENABLE_MODULE_HTTPS=ON --jerry-heaplimit=512 --clean --no-check-test
+// curl: ./tools/apt-get-install-deps.sh
+// x86: build ./tools/build.py --cmake-param=-DENABLE_MODULE_HTTPS=ON --jerry-heaplimit=512 --clean --no-check-test
+// rpi: build ./tools/build.py --cmake-param=-DENABLE_MODULE_HTTPS=ON --jerry-heaplimit=512 --clean --no-check-test --target-board=rpi2
 
 var twitterKeys = {
   consumerKey: process.env.TWR_CONSUMER_KEY_ID || config.twitter.consumer_key,
@@ -61,18 +64,39 @@ oauth2.getOAuthAccessToken('', {
         
         if(cache != tweet.text) {
           cache = tweet.text;
-          relay(tweet);
+          handleUpdatedTweet(tweet);
         }
       });
     }
 });
 
-function relay(tweet) {
-  // send request
-  var tweetUrl = 'http://localhost:' + config.port + 
-                 '/tweet?data=' +
-                 JSON.stringify(createData(tweet));
-  utils.request(tweetUrl); // TODO: add callback
+function playMusic(score) {
+  var tmp;
+
+  if(score > 0) {
+    tmp = 5;
+  } else if(score < 0) {
+    tmp = -5;
+  } else {
+    tmp = 0;
+  }
+
+  console.log('TODO: play a song based on emotional score:', score);
+
+  // $ sudo apt-get install sox libsox-fmt-all
+  // process.runcmd('play music/'+ score + '.mp3 fade t 5 vol 2.5 &');
+
+  // $ sudo apt-get install omxplayer
+  // process.runcmd('omxplayer your.mp3" &');
+  // setTimeout(function() { process.runcmd('killall -9 omxplayer') }, 5000);
+}
+
+function handleUpdatedTweet(tweet) {
+  var data = createData(tweet);
+
+  playMusic(data.emotion.score);
+
+  utils.request(config.hostname, config.port, '/tweet?score=' + data.emotion.score);
 }
 
 function createData(tweet) {
@@ -85,6 +109,8 @@ function createData(tweet) {
       comparative: emotion_result.comparative,
     }
   };
+
+  console.log(data);
   return data;
 }
 

@@ -5,6 +5,7 @@ var keys = {
 };
 
 module.exports = {
+  hostname: process.env.DEMO_HOSTNAME || 'localhost',
   port: 8085,
   twitter: keys,
 };
