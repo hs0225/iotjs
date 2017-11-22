@@ -46,8 +46,10 @@ oauth2.getOAuthAccessToken('', {
 
     var count = 0;
     var heartbeat = setInterval(function() {
-      https.get(options, handler);
       console.log(getCurrentTimeStr(), 'wake#', count++);
+      https.get(options, handler).on('error', function (err) {
+        console.log(err);
+      });
     }, 5000);
 
     // https get request handler
@@ -98,7 +100,7 @@ function playMusic(score) {
   // process.runcmd('play music/'+ score + '.mp3 fade t 5 vol 2.5 &');
 
   // $ sudo apt-get install omxplayer
-  // process.runcmd('omxplayer your.mp3" &');
+  // process.runcmd('omxplayer your.mp3' &');
   // setTimeout(function() { process.runcmd('killall -9 omxplayer') }, 5000);
 }
 

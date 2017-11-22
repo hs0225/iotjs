@@ -35,6 +35,16 @@ var charData = {
     "01000010",
     "00111100",
   ],
+  none: [
+    "00111100",
+    "01000010",
+    "10100101",
+    "10000001",
+    "10000001",
+    "10111101",
+    "01000010",
+    "00111100",
+  ],
 };
 
 function writeLed(wire, array) {
@@ -55,7 +65,7 @@ var wire = i2c.open({address: 0x70, device: '/dev/i2c-1'}, function(err) {
 
   // turn on oscillator
   wire.write([CMD_OSCILLATOR], function() {
-    // wire.write([0x81]);
+    wire.write([0x81]);
     wire.write([CMD_BRIGHTNESS | 1]); // adjust brightness
   });
 });
@@ -63,5 +73,9 @@ var wire = i2c.open({address: 0x70, device: '/dev/i2c-1'}, function(err) {
 function setDisplay(type) {
   writeLed(wire, charData[type]);
 }
+
+setTimeout(function() {
+  setDisplay('none');
+}, 500);
 
 module.exports = setDisplay;
