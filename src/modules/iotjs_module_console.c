@@ -15,6 +15,11 @@
 
 #include "iotjs_def.h"
 
+void iotjs_conf_dbg(dbgout_fptr_t dbgout) {
+  iotjs_environment_t* env = iotjs_environment_get();
+  iotjs_environment_set_dbgout(env, dbgout);
+}
+
 // This function should be able to print utf8 encoded string
 // as utf8 is internal string representation in Jerryscript
 static jerry_value_t Print(const jerry_value_t* jargv,
@@ -25,13 +30,21 @@ static jerry_value_t Print(const jerry_value_t* jargv,
   unsigned str_len = iotjs_string_size(&msg);
   unsigned idx = 0;
 
-  for (idx = 0; idx < str_len; idx++) {
-    if (str[idx] != 0) {
-      fprintf(out_fd, "%c", str[idx]);
-    } else {
-      fprintf(out_fd, "\\u0000");
+  iotjs_environment_t* env = iotjs_environment_get();
+  dbgout_fptr_t dbgout = iotjs_environment_dbgout(env);
+  if(dbgout) {
+    // TODO: handle b/t stdout and stderr
+    dbgout("%s", str);
+  } else {
+    for (idx = 0; idx < str_len; idx++) {
+      if (str[idx] != 0) {
+        fprintf(out_fd, "%c", str[idx]);
+      } else {
+        fprintf(out_fd, "\\u0000");
+      }
     }
   }
+
   iotjs_string_destroy(&msg);
   return jerry_create_undefined();
 }

@@ -19,6 +19,7 @@
 #include "iotjs_handlewrap.h"
 #include "iotjs_js.h"
 #include "iotjs_string_ext.h"
+#include "iotjs_util.h"
 
 #include "jerryscript-debugger.h"
 #ifndef __NUTTX__
@@ -30,6 +31,43 @@
 #include <stdio.h>
 #include <string.h>
 
+#if defined(__TIZEN__)
+
+//#include <glib-2.0/glib.h>
+//
+//bool initialized_;
+//typedef struct { GPollFD *pfd; } gcontext_pollfd;
+//
+//typedef struct {
+//  int fd;
+//  uv_poll_t *pt;
+//  gcontext_pollfd *pollfd;
+//  int ref;
+//} poll_handler;
+//
+//typedef struct {
+//  int max_priority;
+//  int nfds;
+//  long unsigned int allocated_nfds;
+//  GPollFD *fds;
+//  GMainContext *gc;
+//
+//  GSList *poll_handlers;
+//} gcontext;
+//
+////static uv_check_t check_handle;
+////static uv_timer_t timeout_handle;
+//bool query ;
+//GMainContext *gc;
+//gcontext *ctx;
+//
+////GMainContext *context;
+//GSource *source;
+//GMainLoop *loop;
+
+#endif
+
+static bool loop_more;
 
 /**
  * Initialize JerryScript.
@@ -84,8 +122,26 @@ static bool iotjs_jerry_init(iotjs_environment_t* env) {
 
   jerry_release_value(parsed_code);
   jerry_release_value(ret_val);
+
+  // Set event loop.
+  iotjs_environment_set_loop(env, uv_default_loop());
+
+  // Bind environment to global object.
+  const jerry_value_t global = jerry_get_global_object();
+  jerry_set_object_native_pointer(global, env, NULL);
+
+  // Initialize builtin process module.
+  const jerry_value_t process = iotjs_module_get("process");
+  iotjs_jval_set_property_jval(global, "process", process);
+
+  // Release the global object
+  jerry_release_value(global);
+
+
+
   return true;
 }
+
 
 
 static void iotjs_run() {
@@ -108,20 +164,28 @@ static void iotjs_run() {
 }
 
 
+static bool iotjs_loop(iotjs_environment_t* env) {
+  if (!loop_more || iotjs_environment_is_exiting(env)) {
+    return false;
+  }
+
+  loop_more = uv_run(iotjs_environment_loop(env), UV_RUN_ONCE);
+  loop_more |= iotjs_process_next_tick();
+
+  jerry_value_t ret_val = jerry_run_all_enqueued_jobs();
+  if (jerry_value_has_error_flag(ret_val)) {
+    DLOG("jerry_run_all_enqueued_jobs() failed");
+  }
+
+  if (loop_more == false) {
+    loop_more = uv_loop_alive(iotjs_environment_loop(env));
+  }
+  return true;
+}
+
 static int iotjs_start(iotjs_environment_t* env) {
-  // Bind environment to global object.
-  const jerry_value_t global = jerry_get_global_object();
-  jerry_set_object_native_pointer(global, env, NULL);
-
-  // Initialize builtin process module.
-  const jerry_value_t process = iotjs_module_get("process");
-  iotjs_jval_set_property_jval(global, "process", process);
-
-  // Release the global object
-  jerry_release_value(global);
 
   iotjs_environment_set_state(env, kRunningMain);
-
   // Load and call iotjs.js.
   iotjs_run();
 
@@ -130,20 +194,8 @@ static int iotjs_start(iotjs_environment_t* env) {
     // Run event loop.
     iotjs_environment_set_state(env, kRunningLoop);
 
-    bool more;
-    do {
-      more = uv_run(iotjs_environment_loop(env), UV_RUN_ONCE);
-      more |= iotjs_process_next_tick();
-
-      jerry_value_t ret_val = jerry_run_all_enqueued_jobs();
-      if (jerry_value_has_error_flag(ret_val)) {
-        DLOG("jerry_run_all_enqueued_jobs() failed");
-      }
-
-      if (more == false) {
-        more = uv_loop_alive(iotjs_environment_loop(env));
-      }
-    } while (more && !iotjs_environment_is_exiting(env));
+    loop_more = true;
+    while (iotjs_loop(env));
 
     exit_code = iotjs_process_exitcode();
 
@@ -156,10 +208,6 @@ static int iotjs_start(iotjs_environment_t* env) {
   }
 
   exit_code = iotjs_process_exitcode();
-
-  // Release builtin modules.
-  iotjs_module_list_cleanup();
-
   return exit_code;
 }
 
@@ -171,46 +219,26 @@ static void iotjs_uv_walk_to_close_callback(uv_handle_t* handle, void* arg) {
   iotjs_handlewrap_close(handle_wrap, NULL);
 }
 
-int iotjs_entry(int argc, char** argv) {
-  int ret_code = 0;
-
+static bool init_iotjs(iotjs_environment_t* env, int argc, char** argv) {
   // Initialize IoT.js
 
   iotjs_debuglog_init();
 
-  iotjs_environment_t* env = iotjs_environment_get();
   if (!iotjs_environment_parse_command_line_arguments(env, (uint32_t)argc,
                                                       argv)) {
     DLOG("iotjs_environment_parse_command_line_arguments failed");
-    ret_code = 1;
-    goto terminate;
+    return false;
   }
 
   if (!iotjs_jerry_init(env)) {
     DLOG("iotjs_jerry_init failed");
-    ret_code = 1;
-    goto terminate;
+    return false;
   }
 
-  // Set event loop.
-  iotjs_environment_set_loop(env, uv_default_loop());
+  return true;
+}
 
-  // Start IoT.js.
-
-  ret_code = iotjs_start(env);
-
-  // Close uv loop.
-  uv_walk(iotjs_environment_loop(env), iotjs_uv_walk_to_close_callback, NULL);
-  uv_run(iotjs_environment_loop(env), UV_RUN_DEFAULT);
-
-  int res = uv_loop_close(iotjs_environment_loop(env));
-  IOTJS_ASSERT(res == 0);
-
-
-  // Release JerryScript engine.
-  jerry_cleanup();
-
-terminate:;
+static bool iotjs_terminate(iotjs_environment_t* env) {
   bool context_reset = false;
   if (iotjs_environment_config(env)->debugger != NULL) {
     context_reset = iotjs_environment_config(env)->debugger->context_reset;
@@ -220,8 +248,46 @@ terminate:;
 
   iotjs_debuglog_release();
 
-  if (context_reset) {
+  return context_reset;
+}
+
+static void close_uv_loop(iotjs_environment_t* env) {
+  uv_walk(iotjs_environment_loop(env), iotjs_uv_walk_to_close_callback, NULL);
+  uv_run(iotjs_environment_loop(env), UV_RUN_DEFAULT);
+
+  int res = uv_loop_close(iotjs_environment_loop(env));
+  IOTJS_ASSERT(res == 0);
+}
+
+static void release_all(iotjs_environment_t* env) {
+  // Release builtin modules.
+  iotjs_module_list_cleanup();
+
+  // Close uv loop
+  close_uv_loop(env);
+
+  // Release JerryScript engine.
+  jerry_cleanup();
+}
+
+int iotjs_entry(int argc, char** argv) {
+  int ret_code = 0;
+  iotjs_environment_t* env = iotjs_environment_get();
+
+  if(!init_iotjs(env, argc, argv)) {
+    ret_code = 1;
+    goto terminate;
+  }
+
+  // Start IoT.js.
+  ret_code = iotjs_start(env);
+
+  release_all(env);
+
+terminate:;
+  if (iotjs_terminate(env)) {
     return iotjs_entry(argc, argv);
   }
   return ret_code;
 }
+

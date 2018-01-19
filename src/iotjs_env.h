@@ -37,6 +37,7 @@ typedef enum {
   kExiting,
 } State;
 
+typedef int (*dbgout_fptr_t)(const char *, ...);
 
 typedef struct {
   // Number of application arguments including 'iotjs' and app name.
@@ -53,6 +54,10 @@ typedef struct {
 
   // Run config
   Config config;
+
+  // external output
+  dbgout_fptr_t dbgout;
+
 } IOTJS_VALIDATED_STRUCT(iotjs_environment_t);
 
 
@@ -68,6 +73,9 @@ const char* iotjs_environment_argv(const iotjs_environment_t* env,
 
 uv_loop_t* iotjs_environment_loop(const iotjs_environment_t* env);
 void iotjs_environment_set_loop(iotjs_environment_t* env, uv_loop_t* loop);
+
+dbgout_fptr_t iotjs_environment_dbgout(const iotjs_environment_t* env);
+void iotjs_environment_set_dbgout(iotjs_environment_t* env, dbgout_fptr_t dbgout);
 
 const Config* iotjs_environment_config(const iotjs_environment_t* env);
 const DebuggerConfig* iotjs_environment_dconfig(const iotjs_environment_t* env);

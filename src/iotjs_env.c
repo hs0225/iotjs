@@ -64,6 +64,7 @@ static void initialize(iotjs_environment_t* env) {
   _this->config.memstat = false;
   _this->config.show_opcode = false;
   _this->config.debugger = NULL;
+  _this->dbgout = NULL;
 }
 
 
@@ -152,6 +153,15 @@ uv_loop_t* iotjs_environment_loop(const iotjs_environment_t* env) {
   return _this->loop;
 }
 
+void iotjs_environment_set_dbgout(iotjs_environment_t* env, dbgout_fptr_t dbgout) {
+  IOTJS_VALIDATED_STRUCT_METHOD(iotjs_environment_t, env);
+  _this->dbgout = dbgout;
+}
+
+dbgout_fptr_t iotjs_environment_dbgout(const iotjs_environment_t* env) {
+  const IOTJS_VALIDATED_STRUCT_METHOD(iotjs_environment_t, env);
+  return _this->dbgout;
+}
 
 void iotjs_environment_set_loop(iotjs_environment_t* env, uv_loop_t* loop) {
   IOTJS_VALIDATED_STRUCT_METHOD(iotjs_environment_t, env);

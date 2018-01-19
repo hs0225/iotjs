@@ -29,6 +29,8 @@ extern const char* iotjs_debug_prefix[4];
 #define DBGLEV_WARN 2
 #define DBGLEV_INFO 3
 
+#if !defined(__TIZEN__)
+
 #define IOTJS_DLOG(lvl, ...)                                        \
   do {                                                              \
     if (0 <= lvl && lvl <= iotjs_debug_level && iotjs_log_stream) { \
@@ -42,6 +44,14 @@ extern const char* iotjs_debug_prefix[4];
 #define DDLOG(...) IOTJS_DLOG(DBGLEV_WARN, __VA_ARGS__)
 #define DDDLOG(...) IOTJS_DLOG(DBGLEV_INFO, __VA_ARGS__)
 
+#else
+
+#include <dlog/dlog.h>
+#define DLOG_TAG "IOTJS"
+#define DLOG(fmt, args...) dlog_print(DLOG_ERROR, DLOG_TAG, fmt, ##args)
+#define DDLOG(fmt, args...) dlog_print(DLOG_WARN, DLOG_TAG, fmt, ##args)
+#define DDDLOG(fmt, args...) dlog_print(DLOG_INFO, DLOG_TAG, fmt, ##args)
+#endif
 /*
   Use DLOG for errors, default you will see them
   Use DDLOG for warnings, set iotjs_debug_level=2 to see them

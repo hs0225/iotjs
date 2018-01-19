@@ -44,9 +44,12 @@ then
     git commit -m "Initial commit"
   fi
 
+  sudo cp ./lib/* ~/GBS-ROOT/local/BUILD-ROOTS/scratch.armv7l.0/usr/lib/
+  sudo cp config/tizen/include/* ~/GBS-ROOT/local/BUILD-ROOTS/scratch.armv7l.0/usr/include/
+  
   echo -e "\n(3) Calling core gbs build command"
   gbsconf="config/tizen/sample.gbs.conf"
-  gbscommand="gbs -c $gbsconf build -A armv7l --include-all --clean"
+  gbscommand="gbs -c $gbsconf build -A armv7l --include-all"
   echo $gbscommand
   if eval $gbscommand
   then

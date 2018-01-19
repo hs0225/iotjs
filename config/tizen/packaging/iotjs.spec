@@ -20,11 +20,21 @@ BuildRequires: pkgconfig(capi-appfw-package-manager)
 BuildRequires: pkgconfig(capi-appfw-application)
 BuildRequires: pkgconfig(capi-system-peripheral-io)
 BuildRequires: pkgconfig(dlog)
-#BuildRequires: pkgconfig(st_things_sdkapi)
 
 #for https
 BuildRequires:  openssl-devel
 BuildRequires:  libcurl-devel
+
+#BuildRequires: pkgconfig(st_things_sdkapi)
+BuildRequires: scons
+BuildRequires: expat-devel
+BuildRequires: gettext-devel
+BuildRequires: pkgconfig(glib-2.0)
+BuildRequires: pkgconfig(capi-network-softap)
+BuildRequires: pkgconfig(capi-network-wifi-manager)
+BuildRequires: pkgconfig(iotivity)
+BuildRequires: pkgconfig(alarm-service)
+
 
 Requires(postun): /sbin/ldconfig
 Requires(post): /sbin/ldconfig
@@ -69,12 +79,22 @@ cat LICENSE
 cp %{SOURCE1001} .
 
 %build
-./tools/build.py --clean --buildtype=%{build_mode} --target-arch=noarch \
+./tools/build.py --clean --buildtype=%{build_mode} \
+ --external-include-dir=%{_includedir}/appfw \
+ --target-arch=noarch \
  --target-os=tizen --target-board=rpi3 \
+ --external-lib=dlog \
+ --external-lib=octbstack \
+ --external-lib=sdkapi \
  --external-lib=capi-system-peripheral-io \
+ --external-lib=capi-appfw-app-common \
  --compile-flag=-D__TIZEN__ \
+ --compile-flag=-fPIC \
+ --external-modules=src/modules/smart_things \
  --cmake-param=-DENABLE_MODULE_DGRAM=ON \
  --cmake-param=-DENABLE_MODULE_GPIO=ON \
+ --cmake-param=-DENABLE_MODULE_SMARTTHINGS=ON \
+ --cmake-param=-DENABLE_MODULE_STREPRESENTATION=ON \
  --no-init-submodule --no-parallel-build
 # --external-lib=sdkapi \
 
@@ -85,13 +105,12 @@ mkdir -p %{buildroot}%{_includedir}/iotjs
 mkdir -p %{buildroot}%{_libdir}/iotjs
 mkdir -p %{buildroot}%{_libdir}/pkgconfig
 
-
 cp ./build/noarch-tizen/%{build_mode}/bin/iotjs %{buildroot}%{_bindir}/
 cp ./build/noarch-tizen/%{build_mode}/lib/* %{buildroot}%{_libdir}/iotjs/
 
 cp ./include/*.h %{buildroot}%{_includedir}
 cp ./src/*.h %{buildroot}%{_includedir}
-cp ./config/tizen/packaging/%{name}.pc.in %{buildroot}/%{_libdir}/pkgconfig/%{name}.pc
+cp ./config/tizen/packaging/%{name}.pc.in %{buildroot}%{_libdir}/pkgconfig/%{name}.pc
 
 %post -p /sbin/ldconfig
 %postun -p /sbin/ldconfig

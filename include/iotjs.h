@@ -26,5 +26,9 @@
 
 IOTJS_EXTERN_C int iotjs_entry(int argc, char** argv);
 
+/*
+ Set the debug callback
+*/
+IOTJS_EXTERN_C void iotjs_conf_dbg(int (*func_ptr)(const char *, ...));
 
 #endif /* IOTJS_IOTJS_H */

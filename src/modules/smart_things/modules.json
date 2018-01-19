@@ -1,0 +1,19 @@
+{
+  "modules": {
+  	"strepresentation": {
+      "native_files": ["iotjs_module_st_representation.c"],
+      "init": "InitSTRepresentation"
+    },
+    "smartthings": {
+      "platforms": {
+        "linux": {
+          "native_files": ["iotjs_module_smartthings-linux.c"]
+        }
+      },
+      "native_files": ["iotjs_module_smartthings.c"],
+      "js_file": "smartthings.js",
+      "init": "InitSmartThings",
+      "require": ["strepresentation"]
+    }
+  }
+}

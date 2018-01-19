@@ -17,6 +17,7 @@
 #include "iotjs_def.h"
 #include "iotjs_binding.h"
 #include "iotjs_js.h"
+#include "iotjs_util.h"
 
 #include <string.h>
 
@@ -302,9 +303,9 @@ jerry_value_t iotjs_jhelper_call(jerry_value_t jfunc, jerry_value_t jthis,
     }
   }
 #endif
-
+//  iotjs_mutex_lock();
   jerry_value_t jres = jerry_call_function(jfunc, jthis, jargv_, jargc_);
-
+//  iotjs_mutex_unlock();
 #ifndef NDEBUG
   if (jargv_) {
     iotjs_buffer_release((char*)jargv_);
